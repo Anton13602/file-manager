@@ -1,20 +1,21 @@
 import { createReadStream } from 'fs';
-import { createHash } from 'crypto'
+import { createHash } from 'crypto';
+import { cwd } from 'node:process';
+import { join } from 'path';
 
-import { getPath } from '../utils/getPath.js';
+import { errorMessage } from '../../constants/constant.js';
 
-const calculateHash = async () => {
+const calculateHash = async (file) => {
 	const hash = createHash('sha256');
-	const pathToFile = getPath(import.meta, ['files', 'fileToCalculateHashFor.txt'])
+	const pathToFile = join(cwd(), file);
 	const readStream = createReadStream(pathToFile);
 
 	readStream
-		.on('data', (chunk) => {
-		hash.update(chunk)
-	})
+		.on('error', () => console.error(errorMessage))
+		.on('data', (chunk) => hash.update(chunk))
 		.on('end', () => {
-			console.log('eng', hash.digest('hex'));
-		})
+			console.log(hash.digest('hex'));
+		});
 };
 
-await calculateHash();
+export default calculateHash;
