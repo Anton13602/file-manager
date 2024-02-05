@@ -1,9 +1,35 @@
-import { EOL } from 'os';
-import { stdout } from 'node:process';
+import { EOL, cpus, homedir, arch, userInfo } from 'os';
 
-const writeEOL = () =>
-	stdout.write(
-		`Default system End-Of-Line: ${JSON.stringify(EOL)}${EOL}${EOL}`
-	);
+import { errorMessage } from '../../constants/constant.js';
 
-export default writeEOL;
+const getOSInfo = (props) => {
+	const info = {
+		'--EOL': () => JSON.stringify(EOL),
+		'--username': () => userInfo().username,
+		'--homedir': homedir,
+		'--architecture': arch,
+		'--cpus': () => {
+			return cpus()
+				.map(cpu => {
+					return {
+						model: cpu.model,
+						speed: `${cpu.speed}GHz`,
+					};
+				});
+		},
+	};
+
+	if (!info[props]) {
+		console.error(errorMessage);
+		return;
+	}
+
+	if (props === '--cpus') {
+		console.table(info[props]());
+		return;
+	}
+
+	console.log(info[props]());
+};
+
+export default getOSInfo;
