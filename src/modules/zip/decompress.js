@@ -1,20 +1,29 @@
 import { createReadStream, createWriteStream } from 'fs';
-import { createUnzip } from 'zlib';
-import { pipeline } from 'stream';
-import { callbackError } from '../utils/callbackError.js';
+import { cwd } from 'node:process';
+import { basename, extname, join } from 'path';
+import { createBrotliDecompress } from 'zlib';
+import { pipeline } from 'stream/promises';
+import { errorMessage } from '../../constants/constant.js';
+import { state } from '../../state.js';
 
-import { getPath } from '../utils/getPath.js';
+const decompress = async (pathZip, pathFile) => {
+	const currentDir = cwd();
 
-const decompress = async () => {
-	// Write your code here
-	const pathToFile = getPath(import.meta, ['files', 'fileToCompress.txt']);
-	const pathToZip = getPath(import.meta, ['files', 'archive.gz']);
+	const pathToZip = join(currentDir, pathZip);
+	const nameZip = basename(pathToZip, extname(pathToZip));
+	const ext = state.get(nameZip) || 'txt';
+	const pathToFile = join(currentDir, pathFile, `${nameZip}.${ext}`);
 
+
+	const brotli = createBrotliDecompress();
 	const readStream = createReadStream(pathToZip);
 	const writeStream = createWriteStream(pathToFile);
-	const unzip = createUnzip();
 
-	pipeline(readStream, unzip, writeStream, callbackError);
+	await pipeline(
+		readStream,
+		brotli,
+		writeStream,
+	).catch(() => console.error(errorMessage));
 };
 
-await decompress();
+export default decompress;
